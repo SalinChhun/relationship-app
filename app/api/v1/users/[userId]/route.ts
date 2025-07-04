@@ -6,10 +6,11 @@ const userService = new UserService();
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
-        const userId = parseInt(params.userId);
+        const resolvedParams = await params;
+        const userId = parseInt(resolvedParams.userId);
         const payload: UserRequest = await request.json();
 
         // Basic validation
