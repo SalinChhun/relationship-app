@@ -1,11 +1,9 @@
 "use client"
 import type React from "react"
 import {useEffect, useState} from "react"
-import {Heart, Plus, Star, Trash2, UserPlus} from "lucide-react"
-import {getCurrentUserFromLocalStorage} from "@/utils/auth";
-import {useRouter} from "next/navigation";
+import {Heart, Plus, Star, Trash2, UserPlus, Home, Users, Bell, User, MessageCircle, ThumbsUp, Share} from "lucide-react"
 
-// TypeScript interfaces based on your API structure
+// TypeScript interfaces
 interface User {
     id: number
     username: string
@@ -27,24 +25,6 @@ interface UserRelationship {
     updatedAt?: string
 }
 
-interface UserRequest {
-    username: string
-    password: string
-    name: string
-    age: number
-    gender: Gender
-    type?: string
-}
-
-interface AuthFormData {
-    username: string
-    password: string
-    confirmPassword: string
-    name: string
-    age: string
-    gender: Gender
-}
-
 interface RelationshipFormData {
     partnerId: string
     relationshipType: RelationshipType
@@ -56,7 +36,7 @@ interface RelationshipTypeOption {
     emoji: string
 }
 
-// Enums from your Prisma schema
+// Enums
 enum Gender {
     MALE = "MALE",
     FEMALE = "FEMALE",
@@ -71,25 +51,51 @@ enum RelationshipType {
     DHARMA_BROTHER = "DHARMA_BROTHER",
 }
 
-const ModernLoveApp: React.FC = () => {
-    const router = useRouter();
-
+const SocialLoveApp: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null)
+    const [activeTab, setActiveTab] = useState<string>("home")
     const [showAddForm, setShowAddForm] = useState<boolean>(false)
     const [users, setUsers] = useState<User[]>([])
     const [relationships, setRelationships] = useState<UserRelationship[]>([])
+    const [allRelationships, setAllRelationships] = useState<UserRelationship[]>([])
 
     const [relationshipForm, setRelationshipForm] = useState<RelationshipFormData>({
         partnerId: "",
         relationshipType: RelationshipType.GIRLFRIEND,
     })
 
-    // Mock data - in real app, this would come from your API
+    // Mock data
     const mockUsers: User[] = [
         { id: 1, username: "john_doe", name: "John Doe", age: 25, gender: Gender.MALE },
         { id: 2, username: "jane_smith", name: "Jane Smith", age: 23, gender: Gender.FEMALE },
         { id: 3, username: "bob_wilson", name: "Bob Wilson", age: 30, gender: Gender.MALE },
         { id: 4, username: "alice_brown", name: "Alice Brown", age: 28, gender: Gender.FEMALE },
+        { id: 5, username: "charlie_green", name: "Charlie Green", age: 26, gender: Gender.MALE },
+        { id: 6, username: "emma_white", name: "Emma White", age: 24, gender: Gender.FEMALE },
+    ]
+
+    const mockAllRelationships: UserRelationship[] = [
+        {
+            id: 1,
+            userId: 1,
+            partnerId: 2,
+            relationshipType: RelationshipType.GIRLFRIEND,
+            partner: { id: 2, username: "jane_smith", name: "Jane Smith", age: 23, gender: Gender.FEMALE },
+        },
+        {
+            id: 2,
+            userId: 3,
+            partnerId: 4,
+            relationshipType: RelationshipType.WIFE,
+            partner: { id: 4, username: "alice_brown", name: "Alice Brown", age: 28, gender: Gender.FEMALE },
+        },
+        {
+            id: 3,
+            userId: 5,
+            partnerId: 6,
+            relationshipType: RelationshipType.GIRLFRIEND,
+            partner: { id: 6, username: "emma_white", name: "Emma White", age: 24, gender: Gender.FEMALE },
+        },
     ]
 
     const relationshipTypes: RelationshipTypeOption[] = [
@@ -101,48 +107,23 @@ const ModernLoveApp: React.FC = () => {
         { value: RelationshipType.DHARMA_BROTHER, label: "Dharma Brother", emoji: "🕉️" },
     ]
 
-    // Check for existing user on load
+    // Initialize app
     useEffect(() => {
-        const userData = getCurrentUserFromLocalStorage<User>();
-
-        if (!userData) {
-            router.push("/login");
-            return;
-        }
-
-        try {
-            setCurrentUser(userData);
-            setUsers(mockUsers.filter((u) => u.id !== userData.id));
-            setRelationships([
-                {
-                    id: 1,
-                    userId: userData.id,
-                    partnerId: 2,
-                    relationshipType: RelationshipType.GIRLFRIEND,
-                    partner: mockUsers.find((u) => u.id === 2)!,
-                },
-            ]);
-        } catch (error) {
-            console.error("Error reading user data:", error);
-            localStorage.removeItem("currentUser");
-            router.push("/login");
-        }
-    }, [router]);
-
-
+        // Mock current user
+        const mockCurrentUser = { id: 7, username: "current_user", name: "You", age: 27, gender: Gender.MALE }
+        setCurrentUser(mockCurrentUser)
+        setUsers(mockUsers)
+        setAllRelationships(mockAllRelationships)
+        setRelationships(mockAllRelationships.filter(r => r.userId === mockCurrentUser.id))
+    }, [])
 
     const handleAddRelationship = (): void => {
-        if (!relationshipForm.partnerId) {
+        if (!relationshipForm.partnerId || !currentUser) {
             alert("Please select a partner")
             return
         }
 
         const partnerId = Number.parseInt(relationshipForm.partnerId)
-        if (isNaN(partnerId)) {
-            alert("Invalid partner selection")
-            return
-        }
-
         const partner = users.find((u) => u.id === partnerId)
         if (!partner) {
             alert("Selected partner not found")
@@ -151,13 +132,14 @@ const ModernLoveApp: React.FC = () => {
 
         const newRelationship: UserRelationship = {
             id: Date.now(),
-            userId: currentUser!.id,
+            userId: currentUser.id,
             partnerId: partnerId,
             relationshipType: relationshipForm.relationshipType,
             partner: partner,
         }
 
         setRelationships([...relationships, newRelationship])
+        setAllRelationships([...allRelationships, newRelationship])
         setRelationshipForm({
             partnerId: "",
             relationshipType: RelationshipType.GIRLFRIEND,
@@ -165,244 +147,361 @@ const ModernLoveApp: React.FC = () => {
         setShowAddForm(false)
     }
 
-    const handleLogout = (): void => {
-        localStorage.removeItem("currentUser")
-        setCurrentUser(null)
-        setUsers([])
-        setRelationships([])
-        router.push("/login")
-    }
-
     const deleteRelationship = (id: number): void => {
         setRelationships(relationships.filter((r) => r.id !== id))
-    }
-
-    const handleRelationshipFormChange = (field: keyof RelationshipFormData, value: string): void => {
-        setRelationshipForm((prev) => ({ ...prev, [field]: value }))
+        setAllRelationships(allRelationships.filter((r) => r.id !== id))
     }
 
     const getRelationshipTypeData = (type: RelationshipType): RelationshipTypeOption => {
-        const relationshipType = relationshipTypes.find((t) => t.value === type)
-        return relationshipType || { value: type, label: type, emoji: "💝" }
+        return relationshipTypes.find((t) => t.value === type) || { value: type, label: type, emoji: "💝" }
     }
 
-    // Home Page Component
-    const HomePage: React.FC = () => (
-        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-                    <div className="flex justify-between items-center h-14 sm:h-16">
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center mr-2 sm:mr-3">
-                                <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-white" fill="currentColor" />
+    const getRandomUser = (excludeId: number) => {
+        const availableUsers = mockUsers.filter(u => u.id !== excludeId)
+        return availableUsers[Math.floor(Math.random() * availableUsers.length)]
+    }
+
+    // Navigation items
+    const navItems = [
+        { id: "home", icon: Home, label: "Home" },
+        { id: "friends", icon: Users, label: "Friends" },
+        { id: "notifications", icon: Bell, label: "Notifications" },
+        { id: "profile", icon: User, label: "Profile" },
+    ]
+
+    // Home Feed Component
+    const HomeFeed: React.FC = () => (
+        <div className="max-w-2xl mx-auto">
+            {/* Post Creator */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {currentUser?.name.charAt(0)}
+                    </div>
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-2 text-left text-gray-600 transition-colors"
+                    >
+                        Share your love story...
+                    </button>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex-1 justify-center"
+                    >
+                        <Heart className="h-5 w-5 text-rose-500" />
+                        <span className="font-medium">Add Relationship</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Feed Posts */}
+            <div className="space-y-3">
+                {allRelationships.map((relationship) => {
+                    const relationshipData = getRelationshipTypeData(relationship.relationshipType)
+                    const poster = relationship.userId === currentUser?.id ? currentUser : getRandomUser(relationship.partnerId)
+
+                    return (
+                        <div key={relationship.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            {/* Post Header */}
+                            <div className="p-4 pb-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-11 h-11 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium">
+                                            {poster.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-medium text-gray-900">{poster.name}</h3>
+                                            <p className="text-sm text-gray-500">2h</p>
+                                        </div>
+                                    </div>
+                                    {relationship.userId === currentUser?.id && (
+                                        <button
+                                            onClick={() => deleteRelationship(relationship.id)}
+                                            className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+
+                            {/* Post Content */}
+                            <div className="px-4 pb-4">
+                                <p className="text-gray-800 mb-4 leading-relaxed">
+                                    {relationship.userId === currentUser?.id ? "I'm " : `${poster.name} is `}
+                                    now in a relationship with <span className="font-medium text-gray-900">{relationship.partner.name}</span> {relationshipData.emoji}
+                                </p>
+
+                                {/* Modern Relationship Card */}
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-50 rounded-2xl p-4 border border-gray-100">
+                                    <div className="flex items-center justify-between">
+                                        {/* Left Person */}
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium">
+                                                {poster.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">{poster.name}</p>
+                                                <p className="text-sm text-gray-500">{poster.age}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Relationship Status */}
+                                        <div className="flex flex-col items-center space-y-1">
+                                            <span className="text-2xl">{relationshipData.emoji}</span>
+                                            <span className="text-xs text-gray-500 font-medium">{relationshipData.label}</span>
+                                        </div>
+
+                                        {/* Right Person */}
+                                        <div className="flex items-center space-x-3">
+                                            <div>
+                                                <p className="font-medium text-gray-900 text-right">{relationship.partner.name}</p>
+                                                <p className="text-sm text-gray-500 text-right">{relationship.partner.age}</p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center text-white font-medium">
+                                                {relationship.partner.name.charAt(0)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Post Actions */}
+                            <div className="border-t border-gray-100 px-4 py-3">
+                                <div className="flex items-center justify-around">
+                                    <button className="flex items-center space-x-2 text-gray-500 hover:text-rose-500 transition-colors py-2 px-3 rounded-lg hover:bg-rose-50">
+                                        <ThumbsUp className="h-5 w-5" />
+                                        <span className="text-sm font-medium">Like</span>
+                                    </button>
+                                    <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors py-2 px-3 rounded-lg hover:bg-blue-50">
+                                        <MessageCircle className="h-5 w-5" />
+                                        <span className="text-sm font-medium">Comment</span>
+                                    </button>
+                                    <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors py-2 px-3 rounded-lg hover:bg-green-50">
+                                        <Share className="h-5 w-5" />
+                                        <span className="text-sm font-medium">Share</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+
+    // Friends Component
+    const FriendsPage: React.FC = () => (
+        <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Your Connections</h2>
+                {relationships.length === 0 ? (
+                    <div className="text-center py-8">
+                        <Heart className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500">No connections yet</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {relationships.map((relationship) => {
+                            const relationshipData = getRelationshipTypeData(relationship.relationshipType)
+                            return (
+                                <div key={relationship.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                                            {relationship.partner.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">{relationship.partner.name}</h3>
+                                            <p className="text-sm text-gray-600">{relationshipData.emoji} {relationshipData.label}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Discover People</h2>
+                <div className="grid grid-cols-2 gap-3">
+                    {users.filter(u => !relationships.some(r => r.partnerId === u.id)).map((user) => (
+                        <div key={user.id} className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-2">
+                                {user.name.charAt(0)}
+                            </div>
+                            <h3 className="font-semibold text-gray-900 text-sm">{user.name}</h3>
+                            <p className="text-xs text-gray-600">{user.age} years old</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+
+    // Notifications Component
+    const NotificationsPage: React.FC = () => (
+        <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Notifications</h2>
+                <div className="space-y-3">
+                    <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <Heart className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-900">Someone liked your relationship post</p>
+                            <p className="text-xs text-gray-500">2 hours ago</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                            <UserPlus className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-900">New person joined LoveConnect</p>
+                            <p className="text-xs text-gray-500">5 hours ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+
+    // Profile Component
+    const ProfilePage: React.FC = () => (
+        <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+                <div className="text-center mb-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
+                        {currentUser?.name.charAt(0)}
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">{currentUser?.name}</h2>
+                    <p className="text-gray-600">@{currentUser?.username}</p>
+                    <p className="text-gray-600">{currentUser?.age} years old</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg p-4 mb-4">
+                    <h3 className="font-semibold text-gray-900 mb-2">Relationship Status</h3>
+                    <p className="text-gray-700">
+                        {relationships.length === 0 ? "Single" : `${relationships.length} Active ${relationships.length === 1 ? 'Relationship' : 'Relationships'}`}
+                    </p>
+                </div>
+
+                <button className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-rose-600 hover:to-pink-700 transition-all">
+                    Edit Profile
+                </button>
+            </div>
+        </div>
+    )
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case "home":
+                return <HomeFeed />
+            case "friends":
+                return <FriendsPage />
+            case "notifications":
+                return <NotificationsPage />
+            case "profile":
+                return <ProfilePage />
+            default:
+                return <HomeFeed />
+        }
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+                <div className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center">
+                                <Heart className="h-5 w-5 text-white" fill="currentColor" />
+                            </div>
+                            <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
                                 LoveConnect
                             </h1>
                         </div>
-                        <div className="flex items-center space-x-2 sm:space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                                    {currentUser?.name.charAt(0)}
-                                </div>
-                                <span className="text-xs sm:text-sm font-medium text-gray-700 hidden xs:block">
-                  {currentUser?.name}
-                </span>
+                        <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                {currentUser?.name.charAt(0)}
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="text-xs sm:text-sm text-gray-500 hover:text-rose-600 transition-colors px-2 sm:px-3 py-1 rounded-lg hover:bg-rose-50"
-                            >
-                                Logout
-                            </button>
                         </div>
                     </div>
                 </div>
             </header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
-                {/* Hero Section */}
-                <div className="text-center mb-8 sm:mb-12">
-                    <h2 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2 sm:mb-4">
-                        Your Love Dashboard
-                    </h2>
-                    <p className="text-gray-600 text-sm sm:text-lg mb-6 sm:mb-8 px-4">
-                        Manage your relationships and connect with your loved ones
-                    </p>
-                    <button
-                        onClick={() => setShowAddForm(true)}
-                        className="bg-gradient-to-r from-rose-500 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-base sm:text-lg hover:from-rose-600 hover:to-pink-700 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center mx-auto group"
-                    >
-                        <Plus className="mr-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-200" />
-                        <span className="hidden xs:inline">Add New Love Connection</span>
-                        <span className="xs:hidden">Add Connection</span>
-                    </button>
-                </div>
-
-                {/* Current Relationships */}
-                <div className="mb-8 sm:mb-12">
-                    <div className="flex items-center justify-between mb-6 sm:mb-8">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-                            <Heart className="mr-2 sm:mr-3 h-5 w-5 sm:h-7 sm:w-7 text-rose-500" fill="currentColor" />
-                            <span className="hidden xs:inline">Your Love Connections</span>
-                            <span className="xs:hidden">Connections</span>
-                        </h3>
-                        <div className="text-xs sm:text-sm text-gray-500 bg-white/60 px-2 sm:px-3 py-1 rounded-full">
-                            {relationships.length} {relationships.length === 1 ? "Connection" : "Connections"}
-                        </div>
-                    </div>
-
-                    {relationships.length === 0 ? (
-                        <div className="text-center py-12 sm:py-16">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                                <Heart className="h-10 w-10 sm:h-12 sm:w-12 text-rose-400" />
-                            </div>
-                            <h4 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No love connections yet</h4>
-                            <p className="text-gray-500 text-sm sm:text-lg px-4">Start building meaningful relationships today!</p>
-                        </div>
-                    ) : (
-                        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                            {relationships.map((relationship) => {
-                                const relationshipData = getRelationshipTypeData(relationship.relationshipType)
-                                return (
-                                    <div
-                                        key={relationship.id}
-                                        className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all duration-300 border border-white/20 group active:scale-95 sm:hover:scale-105"
-                                    >
-                                        <div className="flex items-center justify-between mb-4 sm:mb-6">
-                                            <div className="flex items-center">
-                                                <div className="relative">
-                                                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
-                                                        {relationship.partner.name.charAt(0)}
-                                                    </div>
-                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
-                                                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
-                                                    </div>
-                                                </div>
-                                                <div className="ml-3 sm:ml-4">
-                                                    <h4 className="font-bold text-gray-900 text-base sm:text-lg">{relationship.partner.name}</h4>
-                                                    <p className="text-xs sm:text-sm text-gray-600">{relationship.partner.age} years old</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => deleteRelationship(relationship.id)}
-                                                className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-                                            >
-                                                <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                                            </button>
-                                        </div>
-
-                                        <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-rose-100">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-xs text-gray-600 mb-1 font-medium">Relationship</p>
-                                                    <p className="font-semibold text-rose-600 flex items-center text-sm sm:text-base">
-                                                        <span className="mr-2 text-base sm:text-lg">{relationshipData.emoji}</span>
-                                                        {relationshipData.label}
-                                                    </p>
-                                                </div>
-                                                <div className="text-xl sm:text-2xl">
-                                                    {relationship.partner.gender === Gender.FEMALE ? "👩" : "👨"}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* Available Users */}
-                <div>
-                    <div className="flex items-center justify-between mb-6 sm:mb-8">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-                            <UserPlus className="mr-2 sm:mr-3 h-5 w-5 sm:h-7 sm:w-7 text-purple-500" />
-                            <span className="hidden xs:inline">Discover Love</span>
-                            <span className="xs:hidden">Discover</span>
-                        </h3>
-                        <div className="text-xs sm:text-sm text-gray-500 bg-white/60 px-2 sm:px-3 py-1 rounded-full">
-                            {users.length} Available
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {users.map((user) => (
-                            <div
-                                key={user.id}
-                                className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all duration-300 border border-white/20 group active:scale-95 sm:hover:scale-105"
-                            >
-                                <div className="text-center">
-                                    <div className="relative inline-block mb-3 sm:mb-4">
-                                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
-                                            {user.name.charAt(0)}
-                                        </div>
-                                        <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                                            <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" fill="currentColor" />
-                                        </div>
-                                    </div>
-                                    <h4 className="font-bold text-gray-900 mb-1 text-sm sm:text-lg">{user.name}</h4>
-                                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{user.age} years old</p>
-                                    <p className="text-xs text-gray-500 mb-3 sm:mb-4">@{user.username}</p>
-                                    <div className="flex justify-center">
-                    <span
-                        className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
-                            user.gender === Gender.MALE ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"
-                        }`}
-                    >
-                      <span className="hidden xs:inline">{user.gender === Gender.MALE ? "👨 Male" : "👩 Female"}</span>
-                      <span className="xs:hidden">{user.gender === Gender.MALE ? "👨" : "👩"}</span>
-                    </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <main className="pb-20 px-4 py-4">
+                {renderContent()}
             </main>
+
+            {/* Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+                <div className="flex justify-around items-center">
+                    {navItems.map((item) => {
+                        const Icon = item.icon
+                        const isActive = activeTab === item.id
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-colors ${
+                                    isActive
+                                        ? "text-rose-600 bg-rose-50"
+                                        : "text-gray-600 hover:text-rose-600 hover:bg-rose-50"
+                                }`}
+                            >
+                                <Icon className="h-6 w-6" />
+                                <span className="text-xs font-medium">{item.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            </nav>
 
             {/* Add Relationship Modal */}
             {showAddForm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
-                    <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md border border-white/20 max-h-[90vh] overflow-y-auto">
-                        <div className="text-center mb-6 sm:mb-8">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="currentColor" />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Heart className="h-8 w-8 text-white" fill="currentColor" />
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                                Create Love Connection
-                            </h2>
-                            <p className="text-gray-600 mt-2 text-sm sm:text-base">Choose someone special to connect with</p>
+                            <h2 className="text-2xl font-bold text-gray-900">Add New Relationship</h2>
+                            <p className="text-gray-600 mt-2">Share your love story with everyone</p>
                         </div>
 
-                        <div className="space-y-4 sm:space-y-6">
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
-                                    Select Your Special Someone
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Choose Your Partner
                                 </label>
                                 <select
                                     value={relationshipForm.partnerId}
-                                    onChange={(e) => handleRelationshipFormChange("partnerId", e.target.value)}
-                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 bg-white/50 text-base"
+                                    onChange={(e) => setRelationshipForm(prev => ({ ...prev, partnerId: e.target.value }))}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                                     required
                                 >
-                                    <option value="">Choose your partner...</option>
-                                    {users.map((user) => (
+                                    <option value="">Select someone special...</option>
+                                    {users.filter(u => !relationships.some(r => r.partnerId === u.id)).map((user) => (
                                         <option key={user.id} value={user.id.toString()}>
-                                            {user.name} (@{user.username}) - {user.age} years old
+                                            {user.name} (@{user.username})
                                         </option>
                                     ))}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Relationship Type</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Relationship Type</label>
                                 <select
                                     value={relationshipForm.relationshipType}
-                                    onChange={(e) => handleRelationshipFormChange("relationshipType", e.target.value)}
-                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 bg-white/50 text-base"
+                                    onChange={(e) => setRelationshipForm(prev => ({ ...prev, relationshipType: e.target.value as RelationshipType }))}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                                 >
                                     {relationshipTypes.map((type) => (
                                         <option key={type.value} value={type.value}>
@@ -412,20 +511,18 @@ const ModernLoveApp: React.FC = () => {
                                 </select>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-2 sm:pt-4">
+                            <div className="flex space-x-4 pt-4">
                                 <button
-                                    type="button"
                                     onClick={() => setShowAddForm(false)}
-                                    className="w-full sm:flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 active:scale-95 transition-all duration-200 text-base"
+                                    className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
-                                    type="button"
                                     onClick={handleAddRelationship}
-                                    className="w-full sm:flex-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 active:scale-95 transition-all duration-200 shadow-lg text-base"
+                                    className="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all shadow-lg"
                                 >
-                                    💕 Connect
+                                    💕 Share
                                 </button>
                             </div>
                         </div>
@@ -434,9 +531,6 @@ const ModernLoveApp: React.FC = () => {
             )}
         </div>
     )
-
-    // Main App Render
-    return <HomePage />
 }
 
-export default ModernLoveApp
+export default SocialLoveApp
