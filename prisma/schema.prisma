@@ -29,6 +29,9 @@ model User {
   userJobs             UserJob[]
   userRelationships    UserRelationship[] @relation("UserRelationships")
   partnerRelationships UserRelationship[] @relation("PartnerRelationships")
+  posts                Post[]
+  comments             Comment[]
+  reactions            Reaction[]
 
   @@map("tbl_user")
 }
@@ -74,6 +77,70 @@ model UserRelationship {
   @@map("tbl_user_relationship")
 }
 
+model Post {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  reactions Reaction[]
+  images    PostImage[]
+
+  @@map("tbl_post")
+}
+
+model PostImage {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  imageUrl  String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("tbl_post_image")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+
+  @@map("tbl_comment")
+}
+
+model Reaction {
+  id        Int          @id @default(autoincrement())
+  userId    Int
+  postId    Int?
+  commentId Int?
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("tbl_reaction")
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -91,4 +158,13 @@ enum RelationshipType {
   HUSBAND
   DHARMA_SISTER
   DHARMA_BROTHER
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  LAUGH
+  WOW
+  SAD
+  ANGRY
 }

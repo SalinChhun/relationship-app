@@ -14,7 +14,7 @@ const useCreateRelationship = () => {
             toast.error(error?.message)
         },
         onSuccess: (data: any) => {
-            queryClient.invalidateQueries({queryKey: ['feeds']});
+            queryClient.invalidateQueries({queryKey: ['relationships']});
             toast.success('Create Relationship successfully')
         }
     })
@@ -30,14 +30,14 @@ const useCreateRelationship = () => {
 const useFetchRelationships = () =>{
 
     const {data,  isLoading, isError} = useQuery({
-        queryKey: ["feeds"],
+        queryKey: ["relationships"],
         queryFn: () => relationshipService.getRelationships()
     });
 
     return {
         isLoading,
         isError,
-        feeds: data,
+        relationships: data,
     }
 }
 

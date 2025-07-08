@@ -1,25 +1,23 @@
-import {BusinessException} from "@/types";
-import {RelationshipService} from "@/services/relationshipService";
+import { NextRequest } from 'next/server';
+import {FeedService} from "@/services/feedService";
 
-const relationshipService = new RelationshipService();
-export async function GET() {
+const feedService = new FeedService();
+
+export async function GET(request: NextRequest) {
     try {
-        const relationships = await relationshipService.getAllRelationships();
+        const searchParams = request.nextUrl.searchParams;
+        const page = parseInt(searchParams.get('pageNumber') || '1');
+        const limit = parseInt(searchParams.get('pageSize') || '10');
+        const userId = searchParams.get('userId') ? parseInt(searchParams.get('userId')!) : undefined;
+
+        const feed = await feedService.getFeed(page, limit, userId);
 
         return Response.json(
-            { success: true, data: relationships },
+            { success: true, data: feed },
             { status: 200 }
         );
     } catch (error) {
         console.error('API Error:', error);
-
-        if (error instanceof BusinessException) {
-            return Response.json(
-                { success: false, error: error.message },
-                { status: error.statusCode }
-            );
-        }
-
         return Response.json(
             { success: false, error: 'Internal server error' },
             { status: 500 }

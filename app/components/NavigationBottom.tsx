@@ -1,0 +1,67 @@
+import React, {useState} from "react";
+import {Home, Plus, User} from "lucide-react";
+
+interface HeaderProps {
+    activeTab: string;
+    setIsOpenCreatePost: () => void;
+    setActiveTab: (tab: string) => void;
+}
+
+export const NavigationBottom: React.FC<HeaderProps> = ({
+                                                activeTab,
+                                                setActiveTab,
+                                                setIsOpenCreatePost
+                                              }) => {
+
+
+    return (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+            <div className="flex justify-around items-center">
+                return (
+                <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+                    <div className="relative flex justify-between items-center">
+
+                        {/* Left Item */}
+                        <button
+                            onClick={() => setActiveTab("home")}
+                            className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-colors ${
+                                activeTab === "home"
+                                    ? "text-rose-600 bg-rose-50"
+                                    : "text-gray-600 hover:text-rose-600 hover:bg-rose-50"
+                            }`}
+                        >
+                            <Home className="h-6 w-6"/>
+                            <span className="text-xs font-medium">Home</span>
+                        </button>
+
+                        {/* Create Button in Center */}
+                        <button
+                            onClick={
+                                () => {
+                                    setIsOpenCreatePost();
+                                }
+                            }
+                            className="absolute left-1/2 -translate-x-1/2 w-14 h-14 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
+                        >
+                            <Plus className="h-6 w-6 text-white"/>
+                        </button>
+
+                        {/* Right Item */}
+                        <button
+                            onClick={() => setActiveTab("profile")}
+                            className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-colors ${
+                                activeTab === "profile"
+                                    ? "text-rose-600 bg-rose-50"
+                                    : "text-gray-600 hover:text-rose-600 hover:bg-rose-50"
+                            }`}
+                        >
+                            <User className="h-6 w-6"/>
+                            <span className="text-xs font-medium">Profile</span>
+                        </button>
+                    </div>
+                </nav>
+                );
+            </div>
+        </nav>
+    )
+}

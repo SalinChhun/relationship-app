@@ -2,21 +2,11 @@ import React, {useState} from "react";
 import {Heart, X} from "lucide-react";
 import usersMutation from "@/lib/hooks/users-mutation";
 import {relationshipTypes} from "@/utils/utils";
-import {Gender, RelationshipType} from "@prisma/client";
+import {RelationshipType} from "@prisma/client";
 import useRelationshipMutation from "@/lib/hooks/relationships-mutation";
 import {RelationshipRequest} from "@/app/types/relationship";
+import {UserType} from "@/app/types/user";
 
-// TypeScript interfaces
-interface User {
-    id: number;
-    username: string;
-    name: string;
-    age: number;
-    gender: Gender;
-    type?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
 
 interface RelationshipFormData {
     partnerId: string;
@@ -26,7 +16,7 @@ interface RelationshipFormData {
 interface CreateRelationshipProps {
     isOpen: boolean;
     onClose: () => void;
-    currentUser: User | null;
+    currentUser: UserType | null;
 }
 
 export const CreateRelationship: React.FC<CreateRelationshipProps> = ({

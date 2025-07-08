@@ -2,7 +2,7 @@ import {http} from "@/utils/http";
 import {RelationshipRequest} from "@/app/types/relationship";
 
 const ServiceId = {
-    RELATIONSHIP: '/api/v1/feeds',
+    RELATIONSHIP: '/api/v1/relationships',
 }
 
 const createRelationship = (requestBody: RelationshipRequest) => {

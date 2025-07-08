@@ -1,8 +1,22 @@
-import React, {useState} from "react";
-import {User} from "@prisma/client";
+import React from "react";
+import {UserType} from "@/app/types/user";
+import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
-export const ProfilePage: React.FC = () => {
-    const [currentUser, setCurrentUser] = useState<User | null>(null)
+interface ProfileProps {
+    isOpenCreateRelationship: boolean;
+    setIsOpenCreateRelationShip: () => void;
+    onCloseCreateRelationShip: () => void;
+    currentUser: UserType | null;
+}
+
+export const ProfilePage: React.FC<ProfileProps> = ({
+                                                        isOpenCreateRelationship,
+                                                        setIsOpenCreateRelationShip,
+                                                        onCloseCreateRelationShip,
+                                                        currentUser
+                                                   }) => {
+
+
     return (
         <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
@@ -24,10 +38,19 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 <button
+                    onClick={() => setIsOpenCreateRelationShip()}
+                    className="mb-4 w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-rose-600 hover:to-pink-700 transition-all">
+                    Add Relationship
+                </button>
+
+                <button
                     className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-rose-600 hover:to-pink-700 transition-all">
                     Edit Profile
                 </button>
             </div>
+
+            {/* Add Relationship Modal */}
+            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => onCloseCreateRelationShip()} currentUser={currentUser}/>
         </div>
     );
 }
