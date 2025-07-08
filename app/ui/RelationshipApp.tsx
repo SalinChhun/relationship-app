@@ -163,7 +163,7 @@ const SocialLoveApp: React.FC = () => {
                                         </>
                                     ) : (
                                         <>
-                                            {relationship?.user?.name} is now in a relationship {relationshipData.label}
+                                            {relationship?.user?.name} is now in a {relationshipData.label}
                                         </>
                                     )}
                                 </p>
