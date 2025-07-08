@@ -15,10 +15,11 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  username  String?  @unique
-  password  String?
+  username  String   @unique
+  password  String
   name      String
   age       Int
+  image     String?
   gender    Gender
   type      String?
   createdAt DateTime @default(now())
@@ -60,14 +61,14 @@ model UserJob {
 model UserRelationship {
   id               Int              @id @default(autoincrement())
   userId           Int
-  partnerId        Int
+  partnerId        Int?
   relationshipType RelationshipType
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   // Relations
-  user    User @relation("UserRelationships", fields: [userId], references: [id], onDelete: Cascade)
-  partner User @relation("PartnerRelationships", fields: [partnerId], references: [id], onDelete: Cascade)
+  user    User  @relation("UserRelationships", fields: [userId], references: [id], onDelete: Cascade)
+  partner User? @relation("PartnerRelationships", fields: [partnerId], references: [id], onDelete: Cascade)
 
   @@unique([userId, partnerId])
   @@map("tbl_user_relationship")
@@ -79,6 +80,11 @@ enum Gender {
 }
 
 enum RelationshipType {
+  SINGLE
+  ENGAGED
+  MARRIED
+  IN_RELATIONSHIP
+  SITUATIONSHIP
   GIRLFRIEND
   BOYFRIEND
   WIFE

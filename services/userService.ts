@@ -1,14 +1,15 @@
 import {prisma} from '@/lib/prisma';
 import {BusinessException, UserRequest, UserResponse} from '@/types';
-import {Gender, RelationshipType, User} from "@prisma/client";
+import {Gender, User} from "@prisma/client";
+import {extractRelationshipType} from "@/utils/utils";
 
 export class UserService {
 
     async createUser(payload: UserRequest): Promise<User> {
         // Check if person already exists to avoid duplicates
-        if (await this.isPersonExists(payload.name, payload.age, payload.gender)) {
+/*        if (await this.isPersonExists(payload.name, payload.age, payload.gender)) {
             throw new BusinessException(400, 'User with the same name and age already exists');
-        }
+        }*/
 
         // ✅ Check if username already exists
         const existingUserByUsername = await prisma.user.findUnique({
@@ -92,15 +93,30 @@ export class UserService {
                 id: userJob.job.id,
                 title: userJob.job.title,
             })),
-            relationships: user.userRelationships.map(relationship => ({
-                id: relationship.partner.id,
-                name: relationship.partner.name,
-                age: relationship.partner.age,
-                gender: relationship.partner.gender,
-                relationshipType: this.extractRelationshipType(relationship.relationshipType),
-            })),
+            relationships: user.userRelationships.map(relationship => {
+                if (!relationship.partner) {
+                    // No partner, only show relationship type
+                    return {
+                        id: null,
+                        name: null,
+                        age: null,
+                        gender: null,
+                        relationshipType: extractRelationshipType(relationship.relationshipType),
+                    };
+                }
+
+                // Partner exists
+                return {
+                    id: relationship.partner.id,
+                    name: relationship.partner.name,
+                    age: relationship.partner.age,
+                    gender: relationship.partner.gender,
+                    relationshipType: extractRelationshipType(relationship.relationshipType),
+                };
+            }),
         }));
     }
+
 
     async getUsersByIds(userIds: number[]): Promise<any[]> {
         const users = await prisma.user.findMany({
@@ -203,31 +219,34 @@ export class UserService {
             return;
         }
 
-        const partnerIds = payload.partnerRequests.map((req:any) => req.id);
+        const partnerIds = payload.partnerRequests
+            .filter((req: any) => req.id !== undefined && req.id !== null)
+            .map((req: any) => req.id);
+        if (partnerIds.length > 0) {
+            // Validate that user is not trying to create relationship with themselves
+            this.validateSelfRelationship(userId, partnerIds);
 
-        // Validate that user is not trying to create relationship with themselves
-        this.validateSelfRelationship(userId, partnerIds);
-
-        // Validate that all partners exist
-        const partners = await tx.user.findMany({
-            where: {
-                id: {
-                    in: partnerIds,
+            // Validate that all partners exist
+            const partners = await tx.user.findMany({
+                where: {
+                    id: {
+                        in: partnerIds,
+                    },
                 },
-            },
-        });
+            });
 
-        if (partners.length !== partnerIds.length) {
-            const foundPartnerIds = partners.map((partner: any) => partner.id);
-            const notFoundPartnerIds = partnerIds.filter((id: any) => !foundPartnerIds.includes(id));
-            throw new BusinessException(404, `Partners not found with IDs: ${notFoundPartnerIds}`);
+            if (partners.length !== partnerIds.length) {
+                const foundPartnerIds = partners.map((partner: any) => partner.id);
+                const notFoundPartnerIds = partnerIds.filter((id: any) => !foundPartnerIds.includes(id));
+                throw new BusinessException(404, `Partners not found with IDs: ${notFoundPartnerIds}`);
+            }
         }
 
         // Create relationships
         await tx.userRelationship.createMany({
             data: payload.partnerRequests.map((partnerRequest: any) => ({
                 userId,
-                partnerId: partnerRequest.id,
+                partnerId: partnerRequest.id ?? null,
                 relationshipType: partnerRequest.relationshipType,
             })),
         });
@@ -241,22 +260,4 @@ export class UserService {
         }
     }
 
-    private extractRelationshipType(relationshipType: RelationshipType): string {
-        switch (relationshipType) {
-            case RelationshipType.GIRLFRIEND:
-                return 'Girlfriend';
-            case RelationshipType.BOYFRIEND:
-                return 'Boyfriend';
-            case RelationshipType.WIFE:
-                return 'Wife';
-            case RelationshipType.HUSBAND:
-                return 'Husband';
-            case RelationshipType.DHARMA_SISTER:
-                return 'ប្អូនស្រីធម៌';
-            case RelationshipType.DHARMA_BROTHER:
-                return 'បងប្រុសធម៌';
-            default:
-                throw new Error(`Unknown relationship type: ${relationshipType}`);
-        }
-    }
 }

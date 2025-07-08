@@ -14,12 +14,12 @@ export async function PUT(
         const payload: UserRequest = await request.json();
 
         // Basic validation
-        if (!payload.name || !payload.age || !payload.gender) {
+/*        if (!payload.name || !payload.age || !payload.gender) {
             return Response.json(
                 { success: false, error: 'Name, age, and gender are required' },
                 { status: 400 }
             );
-        }
+        }*/
 
         await userService.updateUser(userId, payload);
 

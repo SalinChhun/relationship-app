@@ -32,10 +32,10 @@ export interface JobResponse {
 }
 
 export interface PartnerResponse {
-    id: number;
-    name: string;
-    age: number;
-    gender: 'MALE' | 'FEMALE';
+    id: number | null;
+    name: string | null;
+    age: number | null;
+    gender: 'MALE' | 'FEMALE' | null;
     relationshipType: string;
 }
 

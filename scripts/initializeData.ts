@@ -32,6 +32,8 @@ export async function initializeDefaultData() {
             // Create users
             const user1 = await tx.user.create({
                 data: {
+                    username: 'john_doe',
+                    password: '123',
                     name: 'John Doe',
                     age: 30,
                     gender: Gender.MALE,
@@ -40,6 +42,8 @@ export async function initializeDefaultData() {
 
             const user2 = await tx.user.create({
                 data: {
+                    username: 'jane_vee',
+                    password: '123',
                     name: 'Jane Vee',
                     age: 28,
                     gender: Gender.FEMALE,
@@ -48,6 +52,8 @@ export async function initializeDefaultData() {
 
             const user3 = await tx.user.create({
                 data: {
+                    username: 'alice_johnson',
+                    password: '123',
                     name: 'Alice Johnson',
                     age: 25,
                     gender: Gender.FEMALE,
