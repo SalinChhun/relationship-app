@@ -1,20 +1,17 @@
-import {useQuery} from "@tanstack/react-query";
 import {feedService} from "@/app/services/feed.service";
+import {useInfiniteScroll} from "@/lib/hooks/useInfiniteScroll";
 
-const useFetchFeeds = (pageNumber: number, pageSize: number = 3) =>{
-
-    const {data,  isLoading, isError} = useQuery({
-        queryKey: ["feeds", pageNumber, pageSize],
-        queryFn: () => feedService.getFeeds(pageNumber, pageSize),
+const useFetchFeeds = (pageSize: number = 5) => {
+    const feedsQuery = useInfiniteScroll({
+        queryKey: ["feeds"],
+        queryFn: ({ pageParam }) =>
+            feedService.getFeeds({ pageParam, pageSize }) // Pass pageSize here
     });
 
     return {
-        isLoading,
-        isError,
-        feeds: data,
+        ...feedsQuery,
     }
 }
-
 
 
 export const useFeedMutation = {

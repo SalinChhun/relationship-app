@@ -1,18 +1,18 @@
 "use client"
-import type React from "react"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { Heart, MessageCircle, Share, ThumbsUp, Trash2 } from "lucide-react"
-import { ProfilePage } from "@/app/ui/ProfilePage"
-import { NotificationsPage } from "@/app/ui/NotificationsPage"
-import { FriendsPage } from "@/app/ui/FriendsPage"
-import { getCurrentUserFromLocalStorage } from "@/utils/auth"
-import type { RelationshipType } from "@prisma/client"
-import { relationshipTypes } from "@/utils/utils"
-import { Header } from "@/app/components/Header"
-import type { UserType } from "@/app/types/user"
-import { NavigationBottom } from "@/app/components/NavigationBottom"
-import { ImageModal } from "@/app/components/ImageModal"
-import { CreatePost } from "@/app/ui/CreatePost"
+import React from "react"
+import {useCallback, useEffect, useRef, useState} from "react"
+import {Heart, MessageCircle, Share, ThumbsUp, Trash2} from "lucide-react"
+import {ProfilePage} from "@/app/ui/ProfilePage"
+import {NotificationsPage} from "@/app/ui/NotificationsPage"
+import {FriendsPage} from "@/app/ui/FriendsPage"
+import {getCurrentUserFromLocalStorage} from "@/utils/auth"
+import type {RelationshipType} from "@prisma/client"
+import {relationshipTypes} from "@/utils/utils"
+import {Header} from "@/app/components/Header"
+import type {UserType} from "@/app/types/user"
+import {NavigationBottom} from "@/app/components/NavigationBottom"
+import {ImageModal} from "@/app/components/ImageModal"
+import {CreatePost} from "@/app/ui/CreatePost"
 import useFeedMutation from "@/lib/hooks/feeds-mutation"
 
 interface FeedItem {
@@ -28,50 +28,42 @@ const SocialLoveApp: React.FC = () => {
     const [isOpenCreateRelationShip, setIsOpenCreateRelationShip] = useState(false)
     const [isOpenCreatePost, setIsOpenCreatePost] = useState(false)
     const [feeds, setFeeds] = useState<FeedItem[]>([])
-    const [currentPage, setCurrentPage] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
-    const [hasMore, setHasMore] = useState(true)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const [isImageModalOpen, setIsImageModalOpen] = useState(false)
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-    const { feeds: response, isLoading: isFeedLoading } = useFeedMutation.useFetchFeeds(currentPage, 3)
+    // const { feeds: response, isLoading: isFeedLoading } = useFeedMutation.useFetchFeeds(currentPage, 3)
+    const feedsQuery = useFeedMutation.useFetchFeeds(5)
+
+    const bottomRef = useRef<HTMLDivElement | null>(null)
+
+    useEffect(() => {
+        if (!bottomRef.current || feedsQuery.isFetchingNextPage || !feedsQuery.hasNextPage) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            const entry = entries[0];
+            if (entry.isIntersecting) {
+                feedsQuery.fetchNextPage();
+            }
+        });
+
+        observer.observe(bottomRef.current);
+
+        return () => {
+            if (bottomRef.current) {
+                observer.unobserve(bottomRef.current);
+            }
+        };
+    }, [feedsQuery.isFetchingNextPage, feedsQuery.hasNextPage]);
+
 
     useEffect(() => {
         setCurrentUser(getCurrentUserFromLocalStorage())
     }, [])
 
-    useEffect(() => {
-        if (response?.success) {
-            if (currentPage === 1) {
-                setFeeds(response.data.items)
-            } else {
-                setFeeds((prev) => [...prev, ...response.data.items])
-            }
-            setHasMore(response.data.pagination.hasNext)
-        }
-        setIsLoading(false)
-        setIsInitialLoading(false)
-    }, [response])
-
-    const observer = useRef<IntersectionObserver | null>(null)
-    const lastFeedElementRef = useCallback(
-        (node: HTMLDivElement) => {
-            if (isLoading) return
-            if (observer.current) observer.current.disconnect()
-            observer.current = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && hasMore) {
-                    setIsLoading(true)
-                    setCurrentPage((prev) => prev + 1)
-                }
-            })
-            if (node) observer.current.observe(node)
-        },
-        [isLoading, hasMore],
-    )
-
     const getRelationshipTypeData = (type: RelationshipType): any => {
-        return relationshipTypes.find((t) => t.label === type) || { value: type, label: type, emoji: "💝" }
+        return relationshipTypes.find((t) => t.label === type) || {value: type, label: type, emoji: "💝"}
     }
 
     const formatTimeAgo = (dateString: string) => {
@@ -86,20 +78,21 @@ const SocialLoveApp: React.FC = () => {
         return date.toLocaleDateString()
     }
 
-    if (isInitialLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            </div>
-        )
-    }
+    // if (isInitialLoading) {
+    //     return (
+    //         <div className="min-h-screen flex items-center justify-center">
+    //             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+    //         </div>
+    //     )
+    // }
 
-    const PostItem: React.FC<{ post: any; createdAt: string }> = ({ post, createdAt }) => (
+    const PostItem: React.FC<{ post: any; createdAt: string }> =  React.memo(({post, createdAt}) => (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <div className="w-11 h-11 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                        <div
+                            className="w-11 h-11 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
                             {post?.user?.name?.charAt(0)}
                         </div>
                         <div>
@@ -108,8 +101,9 @@ const SocialLoveApp: React.FC = () => {
                         </div>
                     </div>
                     {post.user?.id === currentUser?.id && (
-                        <button className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors">
-                            <Trash2 size={16} />
+                        <button
+                            className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors">
+                            <Trash2 size={16}/>
                         </button>
                     )}
                 </div>
@@ -117,7 +111,8 @@ const SocialLoveApp: React.FC = () => {
             <div className="px-4 pb-4">
                 <p className="text-gray-800 mb-4 leading-relaxed">{post.content}</p>
                 {post.images && post.images.length > 0 && (
-                    <div className={`grid gap-2 mb-4 ${post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                    <div
+                        className={`grid gap-2 mb-4 ${post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
                         {post.images.slice(0, 4).map((image: any, index: number) => (
                             <div
                                 key={image.id}
@@ -133,10 +128,11 @@ const SocialLoveApp: React.FC = () => {
                                     className="w-full h-48 sm:h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                                 {index === 3 && post.images.length > 4 && (
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-xl">
-                    <span className="text-white font-semibold text-lg">
-                      +{post.images.length - 4}
-                    </span>
+                                    <div
+                                        className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-xl">
+                                        <span className="text-white font-semibold text-lg">
+                                          +{post.images.length - 4}
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -153,37 +149,41 @@ const SocialLoveApp: React.FC = () => {
             </div>
             <div className="border-t border-gray-100 px-4 py-3">
                 <div className="flex items-center justify-around">
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-rose-500 transition-colors py-2 px-3 rounded-lg hover:bg-rose-50">
-                        <ThumbsUp className="h-5 w-5" />
+                    <button
+                        className="flex items-center space-x-2 text-gray-500 hover:text-rose-500 transition-colors py-2 px-3 rounded-lg hover:bg-rose-50">
+                        <ThumbsUp className="h-5 w-5"/>
                         <span className="text-sm font-medium">Like</span>
                         {post.reactionsCount > 0 && (
                             <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">{post.reactionsCount}</span>
                         )}
                     </button>
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors py-2 px-3 rounded-lg hover:bg-blue-50">
-                        <MessageCircle className="h-5 w-5" />
+                    <button
+                        className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors py-2 px-3 rounded-lg hover:bg-blue-50">
+                        <MessageCircle className="h-5 w-5"/>
                         <span className="text-sm font-medium">Comment</span>
                         {post.commentsCount > 0 && (
                             <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">{post.commentsCount}</span>
                         )}
                     </button>
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors py-2 px-3 rounded-lg hover:bg-green-50">
-                        <Share className="h-5 w-5" />
+                    <button
+                        className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors py-2 px-3 rounded-lg hover:bg-green-50">
+                        <Share className="h-5 w-5"/>
                         <span className="text-sm font-medium">Share</span>
                     </button>
                 </div>
             </div>
         </div>
-    )
+    ))
 
-    const RelationshipItem: React.FC<{ relationship: any; createdAt: string }> = ({ relationship, createdAt }) => {
+    const RelationshipItem: React.FC<{ relationship: any; createdAt: string }> =  React.memo(({relationship, createdAt}) => {
         const relationshipData = getRelationshipTypeData(relationship.relationshipType)
         return (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 pb-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                            <div className="w-11 h-11 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium">
+                            <div
+                                className="w-11 h-11 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium">
                                 {relationship?.user?.name?.charAt(0)}
                             </div>
                             <div>
@@ -192,8 +192,9 @@ const SocialLoveApp: React.FC = () => {
                             </div>
                         </div>
                         {relationship.user?.id === currentUser?.id && (
-                            <button className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors">
-                                <Trash2 size={16} />
+                            <button
+                                className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors">
+                                <Trash2 size={16}/>
                             </button>
                         )}
                     </div>
@@ -212,7 +213,8 @@ const SocialLoveApp: React.FC = () => {
                         )}
                     </p>
                     <div className="bg-gradient-to-r from-gray-50 to-gray-50 rounded-2xl p-4 border border-gray-100">
-                        <div className={`flex items-center gap-4 overflow-hidden ${relationship?.partner?.name ? "justify-between" : "justify-center"}`}>
+                        <div
+                            className={`flex items-center gap-4 overflow-hidden ${relationship?.partner?.name ? "justify-between" : "justify-center"}`}>
                             {relationship?.partner?.name && (
                                 <div className="flex items-center space-x-3 min-w-0">
                                     <div className="min-w-0">
@@ -223,7 +225,8 @@ const SocialLoveApp: React.FC = () => {
                             )}
                             <div className="flex flex-col items-center space-y-1 shrink-0 w-20 text-center">
                                 <span className="text-2xl">{relationshipData.emoji}</span>
-                                <span className="text-xs text-gray-500 font-medium truncate">{relationshipData.label}</span>
+                                <span
+                                    className="text-xs text-gray-500 font-medium truncate">{relationshipData.label}</span>
                             </div>
                             {relationship?.partner?.name && (
                                 <div className="flex items-center space-x-3 min-w-0 justify-end text-right">
@@ -238,91 +241,92 @@ const SocialLoveApp: React.FC = () => {
                 </div>
                 <div className="border-t border-gray-100 px-4 py-3">
                     <div className="flex items-center justify-around">
-                        <button className="flex items-center space-x-2 text-gray-500 hover:text-rose-500 transition-colors py-2 px-3 rounded-lg hover:bg-rose-50">
-                            <ThumbsUp className="h-5 w-5" />
+                        <button
+                            className="flex items-center space-x-2 text-gray-500 hover:text-rose-500 transition-colors py-2 px-3 rounded-lg hover:bg-rose-50">
+                            <ThumbsUp className="h-5 w-5"/>
                             <span className="text-sm font-medium">Like</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors py-2 px-3 rounded-lg hover:bg-blue-50">
-                            <MessageCircle className="h-5 w-5" />
+                        <button
+                            className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors py-2 px-3 rounded-lg hover:bg-blue-50">
+                            <MessageCircle className="h-5 w-5"/>
                             <span className="text-sm font-medium">Comment</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors py-2 px-3 rounded-lg hover:bg-green-50">
-                            <Share className="h-5 w-5" />
+                        <button
+                            className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors py-2 px-3 rounded-lg hover:bg-green-50">
+                            <Share className="h-5 w-5"/>
                             <span className="text-sm font-medium">Share</span>
                         </button>
                     </div>
                 </div>
             </div>
         )
-    }
+    })
 
-    const HomeFeed: React.FC = () => (
+    const HomeFeed: React.FC = React.memo(() => (
         <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
                 <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <div
+                        className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
                         {currentUser?.name.charAt(0)}
                     </div>
-                    <button className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-2 text-left text-gray-600 transition-colors">
+                    <button
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-2 text-left text-gray-600 transition-colors">
                         Share your love story...
                     </button>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <button className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex-1 justify-center">
-                        <Heart className="h-5 w-5 text-rose-500" />
+                    <button
+                        className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex-1 justify-center">
+                        <Heart className="h-5 w-5 text-rose-500"/>
                         <span className="font-medium">Add Relationship</span>
                     </button>
                 </div>
             </div>
             <div className="space-y-3">
-                {feeds.map((feedItem, index) => {
-                    const key = `${feedItem.type}-${feedItem.id}-${feedItem.createdAt || index}`
-                    console.log(`Key : ${feedItem.id}`)
-                    const content = feedItem.type === "post"
-                        ? <PostItem post={feedItem.data} createdAt={feedItem.createdAt} />
-                        : <RelationshipItem relationship={feedItem.data} createdAt={feedItem.createdAt} />
+                {feedsQuery.items.map((feedItem) => (
+                    <div key={`${feedItem.value.type}-${feedItem.value.id}`}>
+                        {feedItem.value.type === "post" ? (
+                            <PostItem post={feedItem.value.data} createdAt={feedItem.value.createdAt}/>
+                        ) : (
+                            <RelationshipItem relationship={feedItem.value.data} createdAt={feedItem.value.createdAt}/>
+                        )}
+                    </div>
+                ))}
 
-                    const isLast = feeds.length === index + 1
-
-                    return isLast ? (
-                        <div key={index} ref={lastFeedElementRef}>
-                            {content}
-                        </div>
-                    ) : (
-                        <div key={index}>
-                            {content}
-                        </div>
-                    )
-                })}
-
-                {isLoading && (
+                {feedsQuery.isFetchingNextPage && (
                     <div className="flex justify-center py-4">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     </div>
                 )}
-                {!hasMore && feeds.length > 0 && (
+
+                <div ref={bottomRef}></div>
+
+                {!feedsQuery.hasNextPage && feedsQuery.items.length > 0 && (
                     <div className="text-center py-4 text-gray-500">
                         <p>You've reached the end of your feed</p>
                     </div>
                 )}
-                {feeds.length === 0 && !isLoading && (
+
+                {feedsQuery.items.length === 0 && !feedsQuery.isLoading && (
                     <div className="text-center py-8">
-                        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4"/>
                         <p className="text-gray-500">No posts yet. Start sharing your love story!</p>
                     </div>
                 )}
             </div>
+
         </div>
-    )
+    ))
 
     const renderContent = () => {
         switch (activeTab) {
             case "home":
-                return <HomeFeed />
+                return <HomeFeed/>
             case "friends":
-                return <FriendsPage />
+                return <FriendsPage/>
             case "notifications":
-                return <NotificationsPage />
+                return <NotificationsPage/>
             case "profile":
                 return (
                     <ProfilePage
@@ -333,16 +337,17 @@ const SocialLoveApp: React.FC = () => {
                     />
                 )
             default:
-                return <HomeFeed />
+                return <HomeFeed/>
         }
     }
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header setActiveTab={() => setActiveTab("profile")} currentUser={currentUser} />
+            <Header setActiveTab={() => setActiveTab("profile")} currentUser={currentUser}/>
             <main className="pb-20 px-4 py-4">{renderContent()}</main>
-            <NavigationBottom activeTab={activeTab} setActiveTab={setActiveTab} setIsOpenCreatePost={() => setIsOpenCreatePost(true)} />
-            <CreatePost isOpen={isOpenCreatePost} onClose={() => setIsOpenCreatePost(false)} currentUser={currentUser} />
+            <NavigationBottom activeTab={activeTab} setActiveTab={setActiveTab}
+                              setIsOpenCreatePost={() => setIsOpenCreatePost(true)}/>
+            <CreatePost isOpen={isOpenCreatePost} onClose={() => setIsOpenCreatePost(false)} currentUser={currentUser}/>
         </div>
     )
 }
