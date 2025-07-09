@@ -14,6 +14,7 @@ import {NavigationBottom} from "@/app/components/NavigationBottom"
 import {ImageModal} from "@/app/components/ImageModal"
 import {CreatePost} from "@/app/ui/CreatePost"
 import useFeedMutation from "@/lib/hooks/feeds-mutation"
+import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
 interface FeedItem {
     id: string
@@ -27,6 +28,7 @@ const SocialLoveApp: React.FC = () => {
     const [activeTab, setActiveTab] = useState("home")
     const [isOpenCreateRelationShip, setIsOpenCreateRelationShip] = useState(false)
     const [isOpenCreatePost, setIsOpenCreatePost] = useState(false)
+    const [isOpenCreateRelationship, setIsOpenCreateRelationship] = useState(false)
     const [feeds, setFeeds] = useState<FeedItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
@@ -271,12 +273,14 @@ const SocialLoveApp: React.FC = () => {
                         {currentUser?.name.charAt(0)}
                     </div>
                     <button
+                        onClick={() => setIsOpenCreateRelationShip(true)}
                         className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-2 text-left text-gray-600 transition-colors">
                         Share your love story...
                     </button>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                     <button
+                        onClick={() => setIsOpenCreateRelationShip(true)}
                         className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex-1 justify-center">
                         <Heart className="h-5 w-5 text-rose-500"/>
                         <span className="font-medium">Add Relationship</span>
@@ -348,6 +352,8 @@ const SocialLoveApp: React.FC = () => {
             <NavigationBottom activeTab={activeTab} setActiveTab={setActiveTab}
                               setIsOpenCreatePost={() => setIsOpenCreatePost(true)}/>
             <CreatePost isOpen={isOpenCreatePost} onClose={() => setIsOpenCreatePost(false)} currentUser={currentUser}/>
+            {/* Add Relationship Modal */}
+            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationShip(false)} currentUser={currentUser}/>
         </div>
     )
 }
