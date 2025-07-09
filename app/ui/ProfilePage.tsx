@@ -23,7 +23,7 @@ export const ProfilePage: React.FC<ProfileProps> = ({
                 <div className="text-center mb-6">
                     <div
                         className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
-                        {currentUser?.name.charAt(0)}
+                        {currentUser?.name ? currentUser.name.charAt(0) : ""}
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">{currentUser?.name}</h2>
                     <p className="text-gray-600">@{currentUser?.username}</p>

@@ -30,6 +30,8 @@ export const CreateRelationship: React.FC<CreateRelationshipProps> = ({
     });
 
     const {users, isLoading} = usersMutation.useFetchUsers();
+    if (!users?.data || !currentUser) return null;
+
     const relationshipMutation = useRelationshipMutation.useCreateRelationship();
 
     const handleSubmit = async () => {
@@ -80,7 +82,7 @@ export const CreateRelationship: React.FC<CreateRelationshipProps> = ({
 
     // Filter out users who already have relationships and the current user
     const availableUsers = users?.data.filter((user: any) =>
-        user.id !== currentUser?.id
+        user?.id !== currentUser?.id
     );
 
     if (!isOpen) return null;
@@ -151,8 +153,8 @@ export const CreateRelationship: React.FC<CreateRelationshipProps> = ({
                                 >
                                     <option value="">Select someone special...</option>
                                     {availableUsers.map((user: any) => (
-                                        <option key={user.id} value={user.id.toString()}>
-                                            {user.name} (@{user.username}) - {user.age} years old
+                                        <option key={user?.id} value={user?.id.toString()}>
+                                            {user?.name} (@{user?.username}) - {user?.age} years old
                                         </option>
                                     ))}
                                 </select>
@@ -173,7 +175,7 @@ export const CreateRelationship: React.FC<CreateRelationshipProps> = ({
                                 <div className="flex items-center space-x-2">
                                     <div
                                         className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                        {currentUser?.name.charAt(0)}
+                                        {currentUser?.name ? currentUser?.name.charAt(0) : ""}
                                     </div>
                                     <span className="text-sm font-medium">{currentUser?.name}</span>
                                 </div>
