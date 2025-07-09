@@ -3,18 +3,14 @@ import {UserType} from "@/app/types/user";
 import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
 interface ProfileProps {
-    isOpenCreateRelationship: boolean;
-    setIsOpenCreateRelationShip: () => void;
-    onCloseCreateRelationShip: () => void;
     currentUser: UserType | null;
 }
 
 export const ProfilePage: React.FC<ProfileProps> = ({
-                                                        isOpenCreateRelationship,
-                                                        setIsOpenCreateRelationShip,
-                                                        onCloseCreateRelationShip,
                                                         currentUser
                                                    }) => {
+
+    const [isOpenCreateRelationship, setIsOpenCreateRelationship] = React.useState(false);
 
 
     return (
@@ -38,7 +34,7 @@ export const ProfilePage: React.FC<ProfileProps> = ({
                 </div>
 
                 <button
-                    onClick={() => setIsOpenCreateRelationShip()}
+                    onClick={() => setIsOpenCreateRelationship(true)}
                     className="mb-4 w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-rose-600 hover:to-pink-700 transition-all">
                     Add Relationship
                 </button>
@@ -50,7 +46,7 @@ export const ProfilePage: React.FC<ProfileProps> = ({
             </div>
 
             {/* Add Relationship Modal */}
-            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => onCloseCreateRelationShip()} currentUser={currentUser}/>
+            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationship(true)} currentUser={currentUser}/>
         </div>
     );
 }

@@ -26,7 +26,6 @@ interface FeedItem {
 const SocialLoveApp: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<UserType | null>(null)
     const [activeTab, setActiveTab] = useState("home")
-    const [isOpenCreateRelationShip, setIsOpenCreateRelationShip] = useState(false)
     const [isOpenCreatePost, setIsOpenCreatePost] = useState(false)
     const [isOpenCreateRelationship, setIsOpenCreateRelationship] = useState(false)
     const [feeds, setFeeds] = useState<FeedItem[]>([])
@@ -273,14 +272,14 @@ const SocialLoveApp: React.FC = () => {
                         {currentUser?.name.charAt(0)}
                     </div>
                     <button
-                        onClick={() => setIsOpenCreateRelationShip(true)}
+                        onClick={() => setIsOpenCreateRelationship(true)}
                         className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-2 text-left text-gray-600 transition-colors">
                         Share your love story...
                     </button>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                     <button
-                        onClick={() => setIsOpenCreateRelationShip(true)}
+                        onClick={() => setIsOpenCreateRelationship(true)}
                         className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors flex-1 justify-center">
                         <Heart className="h-5 w-5 text-rose-500"/>
                         <span className="font-medium">Add Relationship</span>
@@ -334,9 +333,6 @@ const SocialLoveApp: React.FC = () => {
             case "profile":
                 return (
                     <ProfilePage
-                        isOpenCreateRelationship={isOpenCreateRelationShip}
-                        setIsOpenCreateRelationShip={() => setIsOpenCreateRelationShip(true)}
-                        onCloseCreateRelationShip={() => setIsOpenCreateRelationShip(false)}
                         currentUser={currentUser}
                     />
                 )
@@ -353,7 +349,7 @@ const SocialLoveApp: React.FC = () => {
                               setIsOpenCreatePost={() => setIsOpenCreatePost(true)}/>
             <CreatePost isOpen={isOpenCreatePost} onClose={() => setIsOpenCreatePost(false)} currentUser={currentUser}/>
             {/* Add Relationship Modal */}
-            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationShip(false)} currentUser={currentUser}/>
+            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationship(false)} currentUser={currentUser}/>
         </div>
     )
 }
