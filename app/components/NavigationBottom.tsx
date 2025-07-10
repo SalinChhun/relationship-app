@@ -1,17 +1,20 @@
 import React, {useState} from "react";
 import {Home, Plus, User} from "lucide-react";
+import {CreatePost} from "@/app/ui/CreatePost";
 
 interface HeaderProps {
+    currentUser: any;
     activeTab: string;
-    setIsOpenCreatePost: () => void;
     setActiveTab: (tab: string) => void;
 }
 
 export const NavigationBottom: React.FC<HeaderProps> = ({
+                                                currentUser,
                                                 activeTab,
                                                 setActiveTab,
-                                                setIsOpenCreatePost
                                               }) => {
+
+    const [isOpenCreatePost, setIsOpenCreatePost] = useState(false)
 
 
     return (
@@ -36,11 +39,7 @@ export const NavigationBottom: React.FC<HeaderProps> = ({
 
                         {/* Create Button in Center */}
                         <button
-                            onClick={
-                                () => {
-                                    setIsOpenCreatePost();
-                                }
-                            }
+                            onClick={() => setIsOpenCreatePost(true)}
                             className="absolute left-1/2 -translate-x-1/2 w-14 h-14 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
                         >
                             <Plus className="h-6 w-6 text-white"/>
@@ -62,6 +61,14 @@ export const NavigationBottom: React.FC<HeaderProps> = ({
                 </nav>
                 );
             </div>
+
+            {/* Add Post Modal */}
+            <CreatePost
+                isOpen={isOpenCreatePost}
+                onClose={() => setIsOpenCreatePost(false)}
+                currentUser={currentUser}
+            />
+
         </nav>
     )
 }
