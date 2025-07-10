@@ -92,6 +92,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({
                         userId: "",
                         content: "",
                     });
+                    setIsUploading(false);
                 },
                 onError: (error) => {
                     setIsUploading(false);
