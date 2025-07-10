@@ -2,6 +2,7 @@ import React, {useState} from "react";
 import {Heart, X} from "lucide-react";
 import {UserType} from "@/app/types/user";
 import usePostMutation from "@/lib/hooks/post-mutation";
+import ImageUpload from "@/app/components/ImageUpload";
 
 
 interface PostFormData {
@@ -16,16 +17,19 @@ interface CreatePostProps {
 }
 
 export const CreatePost: React.FC<CreatePostProps> = ({
-                                                                          isOpen,
-                                                                          onClose,
-                                                                          currentUser
-                                                                      }) => {
+                                                          isOpen,
+                                                          onClose,
+                                                          currentUser
+                                                      }) => {
+
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
     const [postForm, setPostForm] = useState<PostFormData>({
         userId: "",
         content: "",
     });
 
-
+    const [isUploading, setIsUploading] = useState(false);
     const createPostMutation = usePostMutation.useCreatePost();
 
     const handleSubmit = async () => {
@@ -36,10 +40,49 @@ export const CreatePost: React.FC<CreatePostProps> = ({
         }
         try {
 
+            setIsUploading(true);
+
+            const uploadedImages: { imageUrl: string; caption: string; order: number }[] = [];
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                console.log("Uploading file:", file.name);
+
+                // Get ImageKit auth
+                const authRes = await fetch("/api/imagekit-auth");
+                const {signature, expire, token} = await authRes.json();
+
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("fileName", file.name);
+                formData.append("useUniqueFileName", "true");
+                formData.append("publicKey", process.env.NEXT_PUBLIC_PUBLIC_KEY!);
+                formData.append("signature", signature);
+                formData.append("expire", expire);
+                formData.append("token", token);
+
+                const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!uploadRes.ok) throw new Error("Upload failed");
+
+                const uploadData = await uploadRes.json();
+                uploadedImages.push({
+                    imageUrl: uploadData.url,
+                    caption: "",
+                    order: i,
+                });
+            }
+
             const requestBody: any = {
                 userId: currentUser.id,
                 content: postForm.content,
+                images: uploadedImages
             };
+
+            console.log("Request Body:", requestBody);
 
             createPostMutation.mutation(requestBody, {
                 onSuccess: () => {
@@ -49,12 +92,15 @@ export const CreatePost: React.FC<CreatePostProps> = ({
                         userId: "",
                         content: "",
                     });
-                }
+                },
+                onError: (error) => {
+                    setIsUploading(false);
+                },
             });
-
         } catch (error) {
             console.error("Error creating relationship:", error);
             alert("Failed to create relationship. Please try again.");
+            setIsUploading(false);
         } finally {
 
         }
@@ -72,6 +118,8 @@ export const CreatePost: React.FC<CreatePostProps> = ({
 
 
     if (!isOpen) return null;
+
+    const isLoading = isUploading || createPostMutation.isLoading;
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -98,21 +146,21 @@ export const CreatePost: React.FC<CreatePostProps> = ({
 
                 {/* Form */}
                 <div className="space-y-6">
-
-                    {/* Relationship Type */}
+                    {/* Post Title - Facebook style at the top */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Post Title
-                        </label>
-                        <input
-                            type="text"
-                            value={postForm.content}
-                            onChange={(e) => setPostForm({...postForm, content: e.target.value})}
-                            placeholder="Write a title for your post..."
-                            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent text-sm text-gray-900 placeholder-gray-400 transition"
-                        />
+                    <textarea
+                        value={postForm.content}
+                        onChange={(e) => setPostForm({...postForm, content: e.target.value})}
+                        placeholder="What's on your mind?"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent text-lg text-gray-900 placeholder-gray-500 transition resize-none"
+                        rows={3}
+                    />
                     </div>
 
+                    {/* Image Upload */}
+                    <div>
+                        <ImageUpload onFilesSelected={setSelectedFiles}/>
+                    </div>
 
                     {/* Action Buttons */}
                     <div className="flex space-x-4 pt-4">
@@ -128,13 +176,12 @@ export const CreatePost: React.FC<CreatePostProps> = ({
                             onClick={handleSubmit}
                             className="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-rose-600 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                         >
-                            {createPostMutation.isLoading ? (
+                            {isLoading ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             ) : (
                                 "Post"
                             )}
                         </button>
-
                     </div>
                 </div>
             </div>

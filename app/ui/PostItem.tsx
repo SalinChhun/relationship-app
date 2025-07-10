@@ -35,7 +35,7 @@ export const PostItem: React.FC<{
                     )}
                 </div>
             </div>
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-1">
                 <p className="text-gray-800 mb-4 leading-relaxed">{post.content}</p>
                 {post.images && post.images.length > 0 && (
                     <div

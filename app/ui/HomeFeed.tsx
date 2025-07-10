@@ -3,7 +3,6 @@ import {Heart} from "lucide-react";
 import {PostItem} from "@/app/ui/PostItem";
 import {RelationshipItem} from "@/app/ui/RelationshipItem";
 import useFeedMutation from "@/lib/hooks/feeds-mutation";
-import {CreatePost} from "@/app/ui/CreatePost";
 import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
 export const HomeFeed: React.FC<{
