@@ -14,7 +14,9 @@ const useCreateRelationship = () => {
             toast.error(error?.message)
         },
         onSuccess: (data: any) => {
-            queryClient.invalidateQueries({queryKey: ['relationships']});
+            // queryClient.invalidateQueries({queryKey: ['feeds']});
+            // TODO: Resetting queries for correct infinite scroll behavior
+            queryClient.resetQueries({ queryKey: ['feeds'], exact: false });
             toast.success('Create Relationship successfully')
         }
     })

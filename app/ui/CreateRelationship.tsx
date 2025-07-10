@@ -30,9 +30,9 @@ export const CreateRelationship: React.FC<CreateRelationshipProps> = ({
     });
 
     const {users, isLoading} = usersMutation.useFetchUsers();
-    if (!users?.data || !currentUser) return null;
-
     const relationshipMutation = useRelationshipMutation.useCreateRelationship();
+
+    if (!users?.data || !currentUser) return null;
 
     const handleSubmit = async () => {
 

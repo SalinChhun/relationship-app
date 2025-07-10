@@ -13,7 +13,9 @@ const useCreatePost = () => {
             toast.error(error?.message)
         },
         onSuccess: (data: any) => {
-            queryClient.invalidateQueries({queryKey: ['feeds']});
+            // queryClient.invalidateQueries({queryKey: ['feeds']});
+            // TODO: Resetting queries for correct infinite scroll behavior
+            queryClient.resetQueries({ queryKey: ['feeds'], exact: false });
             toast.success('Create post successfully')
         }
     })

@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import {UserType} from "@/app/types/user";
 import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
@@ -10,7 +10,7 @@ export const ProfilePage: React.FC<ProfileProps> = ({
                                                         currentUser
                                                    }) => {
 
-    const [isOpenCreateRelationship, setIsOpenCreateRelationship] = React.useState(false);
+    const [isOpenCreateRelationship, setIsOpenCreateRelationship] = useState(false);
 
 
     return (
@@ -46,7 +46,7 @@ export const ProfilePage: React.FC<ProfileProps> = ({
             </div>
 
             {/* Add Relationship Modal */}
-            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationship(true)} currentUser={currentUser}/>
+            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationship(false)} currentUser={currentUser}/>
         </div>
     );
 }

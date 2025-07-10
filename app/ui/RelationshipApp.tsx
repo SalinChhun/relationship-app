@@ -1,13 +1,12 @@
 "use client"
-import React from "react"
-import {useCallback, useEffect, useRef, useState} from "react"
+import React, {useEffect, useRef, useState} from "react"
 import {Heart, MessageCircle, Share, ThumbsUp, Trash2} from "lucide-react"
 import {ProfilePage} from "@/app/ui/ProfilePage"
 import {NotificationsPage} from "@/app/ui/NotificationsPage"
 import {FriendsPage} from "@/app/ui/FriendsPage"
 import {getCurrentUserFromLocalStorage} from "@/utils/auth"
 import type {RelationshipType} from "@prisma/client"
-import {relationshipTypes} from "@/utils/utils"
+import {formatTimeAgo, relationshipTypes} from "@/utils/utils"
 import {Header} from "@/app/components/Header"
 import type {UserType} from "@/app/types/user"
 import {NavigationBottom} from "@/app/components/NavigationBottom"
@@ -16,29 +15,18 @@ import {CreatePost} from "@/app/ui/CreatePost"
 import useFeedMutation from "@/lib/hooks/feeds-mutation"
 import {CreateRelationship} from "@/app/ui/CreateRelationship";
 
-interface FeedItem {
-    id: string
-    type: "post" | "relationship"
-    createdAt: string
-    data: any
-}
-
 const SocialLoveApp: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<UserType | null>(null)
     const [activeTab, setActiveTab] = useState("home")
     const [isOpenCreatePost, setIsOpenCreatePost] = useState(false)
     const [isOpenCreateRelationship, setIsOpenCreateRelationship] = useState(false)
-    const [feeds, setFeeds] = useState<FeedItem[]>([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [isInitialLoading, setIsInitialLoading] = useState(true)
     const [isImageModalOpen, setIsImageModalOpen] = useState(false)
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-    // const { feeds: response, isLoading: isFeedLoading } = useFeedMutation.useFetchFeeds(currentPage, 3)
     const feedsQuery = useFeedMutation.useFetchFeeds(5)
 
+    // TODO: Implement infinite scroll for feeds
     const bottomRef = useRef<HTMLDivElement | null>(null)
-
     useEffect(() => {
         if (!bottomRef.current || feedsQuery.isFetchingNextPage || !feedsQuery.hasNextPage) return;
 
@@ -59,6 +47,7 @@ const SocialLoveApp: React.FC = () => {
     }, [feedsQuery.isFetchingNextPage, feedsQuery.hasNextPage]);
 
 
+    // TODO: Check if user is logged in
     useEffect(() => {
         setCurrentUser(getCurrentUserFromLocalStorage())
     }, [])
@@ -66,26 +55,6 @@ const SocialLoveApp: React.FC = () => {
     const getRelationshipTypeData = (type: RelationshipType): any => {
         return relationshipTypes.find((t) => t.label === type) || {value: type, label: type, emoji: "💝"}
     }
-
-    const formatTimeAgo = (dateString: string) => {
-        const date = new Date(dateString)
-        const now = new Date()
-        const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-
-        if (diffInHours < 1) return "Just now"
-        if (diffInHours < 24) return `${diffInHours}h`
-        const diffInDays = Math.floor(diffInHours / 24)
-        if (diffInDays < 7) return `${diffInDays}d`
-        return date.toLocaleDateString()
-    }
-
-    // if (isInitialLoading) {
-    //     return (
-    //         <div className="min-h-screen flex items-center justify-center">
-    //             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-    //         </div>
-    //     )
-    // }
 
     const PostItem: React.FC<{ post: any; createdAt: string }> =  React.memo(({post, createdAt}) => (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -286,6 +255,13 @@ const SocialLoveApp: React.FC = () => {
                     </button>
                 </div>
             </div>
+            {
+                feedsQuery.isLoading && feedsQuery.items.length === 0 && (
+                    <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    </div>
+                )
+            }
             <div className="space-y-3">
                 {feedsQuery.items.map((feedItem) => (
                     <div key={`${feedItem.value.type}-${feedItem.value.id}`}>
@@ -343,13 +319,27 @@ const SocialLoveApp: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header setActiveTab={() => setActiveTab("profile")} currentUser={currentUser}/>
+            <Header
+                setActiveTab={() => setActiveTab("profile")}
+                currentUser={currentUser}
+            />
             <main className="pb-20 px-4 py-4">{renderContent()}</main>
-            <NavigationBottom activeTab={activeTab} setActiveTab={setActiveTab}
-                              setIsOpenCreatePost={() => setIsOpenCreatePost(true)}/>
-            <CreatePost isOpen={isOpenCreatePost} onClose={() => setIsOpenCreatePost(false)} currentUser={currentUser}/>
+            <NavigationBottom
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                setIsOpenCreatePost={() => setIsOpenCreatePost(true)}
+            />
+            <CreatePost
+                isOpen={isOpenCreatePost}
+                onClose={() => setIsOpenCreatePost(false)}
+                currentUser={currentUser}
+            />
             {/* Add Relationship Modal */}
-            <CreateRelationship isOpen={isOpenCreateRelationship} onClose={() => setIsOpenCreateRelationship(false)} currentUser={currentUser}/>
+            <CreateRelationship
+                isOpen={isOpenCreateRelationship}
+                onClose={() => setIsOpenCreateRelationship(false)}
+                currentUser={currentUser}
+            />
         </div>
     )
 }

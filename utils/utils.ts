@@ -48,3 +48,15 @@ export const extractRelationshipType = (relationshipType: RelationshipType): str
             return relationshipType;
     }
 }
+
+export const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours < 24) return `${diffInHours}h`
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d`
+    return date.toLocaleDateString()
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import {Suspense} from 'react';
-import RelationshipApp from "@/app/ui/RelationshipApp";
+import SocialApp from "@/app/ui/RelationshipApp";
 
 
 export default function HomePage() {
@@ -16,7 +16,7 @@ export default function HomePage() {
                 </div>
             }
         >
-            <RelationshipApp/>
+            <SocialApp/>
         </Suspense>
     );
 }
