@@ -1,7 +1,7 @@
 'use client';
 
 import {Suspense} from 'react';
-import SocialApp from "@/app/ui/RelationshipApp";
+import SocialApp from "@/app/ui/SocialApp";
 
 
 export default function HomePage() {

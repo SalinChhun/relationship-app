@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {Heart, LogOut, Settings, User} from "lucide-react";
 import {UserType} from "@/app/types/user";
+// import NotificationRequest from "@/app/components/Notification";
 
 interface HeaderProps {
     setActiveTab: () => void;
@@ -51,7 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     {/* User Profile Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
+                    <div className="relative flex items-center space-x-3" ref={dropdownRef}>
+                        {/*<NotificationRequest/>*/}
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
