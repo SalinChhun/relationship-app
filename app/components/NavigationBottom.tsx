@@ -65,7 +65,7 @@ export const NavigationBottom: React.FC<HeaderProps> = ({
                         {/* Create Button in Center */}
                         <button
                             onClick={() => setIsOpenCreatePost(true)}
-                            className="-translate-x-1/2 w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
+                            className="absolute left-1/2  -translate-x-1/2 w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
                         >
                             <Plus className="h-6 w-6 text-white"/>
                         </button>
