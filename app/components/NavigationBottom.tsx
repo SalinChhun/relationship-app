@@ -70,7 +70,7 @@ export const NavigationBottom: React.FC<HeaderProps> = ({
                             <Plus className="h-6 w-6 text-white"/>
                         </button>
 
-                        <button
+                        {/*<button
                             onClick={handleSendNotification}
                             className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-colors ${
                                 activeTab === "profile"
@@ -80,7 +80,7 @@ export const NavigationBottom: React.FC<HeaderProps> = ({
                         >
                             <User className="h-6 w-6"/>
                             <span className="text-xs font-medium">Send Notification</span>
-                        </button>
+                        </button>*/}
 
                         {/* Right Item */}
                         <button
