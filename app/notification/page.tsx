@@ -1,3 +1,4 @@
+"use client";
 import NotificationRequest from "@/app/components/Notification";
 import {sendNotification} from "@/actions/notification";
 
