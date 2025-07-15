@@ -1,6 +1,6 @@
 "use server";
 import webpush from "web-push";
-import {subscriptionStore} from "@/lib/subscription-store";
+import {prisma} from "@/lib/prisma";
 
 // Validate environment variables
 const validateEnvVars = () => {
@@ -22,130 +22,57 @@ const validateEnvVars = () => {
 	return { publicKey, privateKey };
 };
 
-export const storeSubscription = async (subscriptionData: string, userId: string = 'default') => {
-	try {
-		const subscription = JSON.parse(subscriptionData);
-		subscriptionStore.store(userId, subscription);
-		return JSON.stringify({ success: true });
-	} catch (error: any) {
-		return JSON.stringify({ success: false, error: error.message });
-	}
-};
-
 export const sendNotification = async (
 	message: string,
 	icon: string,
 	name: string,
-	userId: string = 'default'
+	userId: any
 ) => {
 	try {
-		// Validate environment variables first
 		const { publicKey, privateKey } = validateEnvVars();
 
-		console.log('Public key length:', publicKey.length);
-		console.log('Private key length:', privateKey.length);
-		console.log('Public key starts with B:', publicKey.startsWith('B'));
-		console.log('Private key format valid:', privateKey.length === 43);
+		webpush.setVapidDetails("mailto:you@example.com", publicKey, privateKey);
 
-		webpush.setVapidDetails(
-			"mailto:myuserid@email.com",
-			publicKey,
-			privateKey
-		);
-
-		const subscription: any = subscriptionStore.get(userId);
-
-		if (!subscription) {
-			return JSON.stringify({
-				success: false,
-				error: "No subscription found for user"
-			});
-		}
-
-		const payload = JSON.stringify({
-			title: name,
-			body: message,
-			icon: icon,
-			badge: icon,
-			tag: 'notification-tag',
-			data: {
-				url: '/'
-			}
+		const subscriptions = await prisma.pushSubscription.findMany({
+			where: { userId: parseInt(userId) },
 		});
 
-		await webpush.sendNotification(
-			subscription, payload
-		);
-
-		return JSON.stringify({
-			success: true,
-			message: "Notification sent successfully"
-		});
-
-	} catch (error: any) {
-		console.error("Error sending notification:", error);
-		return JSON.stringify({
-			success: false,
-			error: error.message || "Failed to send notification"
-		});
-	}
-};
-
-export const sendNotificationToAll = async (
-	message: string,
-	icon: string,
-	name: string
-) => {
-	try {
-		// Validate environment variables first
-		const { publicKey, privateKey } = validateEnvVars();
-
-		webpush.setVapidDetails(
-			"mailto:myuserid@email.com",
-			publicKey,
-			privateKey
-		);
-
-		const subscriptions = subscriptionStore.getAll();
-
-		if (subscriptions.length === 0) {
-			return JSON.stringify({
-				success: false,
-				error: "No subscriptions found"
-			});
-		}
-
-		const payload = JSON.stringify({
-			title: name,
-			body: message,
-			icon: icon,
-			badge: icon,
-			tag: 'notification-tag',
-			data: {
-				url: '/'
-			}
-		});
+		console.log('subscriptions:', subscriptions);
 
 		const results = await Promise.allSettled(
-			subscriptions.map((subscription: any) =>
-				webpush.sendNotification(subscription, payload)
+			subscriptions.map((sub: any) =>
+				webpush.sendNotification(
+					{
+						endpoint: sub.endpoint,
+						keys: {
+							auth: sub.authKey,
+							p256dh: sub.p256dhKey,
+						},
+					},
+					JSON.stringify({
+						message: name,
+						icon,
+						body: message,
+					})
+				)
 			)
 		);
 
-		const successful = results.filter((result: any) => result.status === 'fulfilled').length;
-		const failed = results.filter((result: any) => result.status === 'rejected').length;
+		const errors = results.filter((r: any) => r.status === 'rejected');
+		if (errors.length > 0) {
+			console.error("Some notifications failed:", errors);
+		}
 
 		return JSON.stringify({
 			success: true,
-			message: `Notification sent to ${successful} subscribers. ${failed} failed.`,
-			stats: { successful, failed, total: subscriptions.length }
+			message: "Notifications sent",
+			failedCount: errors.length,
 		});
 
 	} catch (error: any) {
-		console.error("Error sending notifications:", error);
 		return JSON.stringify({
 			success: false,
-			error: error.message || "Failed to send notifications"
+			error: error.message,
 		});
 	}
 };

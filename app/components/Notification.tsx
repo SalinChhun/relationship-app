@@ -4,15 +4,20 @@ import { BellOff, BellRing } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { urlB64ToUint8Array } from "@/utils/utils";
-import { storeSubscription } from "@/actions/notification";
+import {UserType} from "@/app/types/user";
 
-export default function NotificationRequest() {
+interface NotificationRequestProps {
+	currentUser: UserType | null;
+}
+
+export const NotificationRequest: React.FC<NotificationRequestProps> = ({
+																		  currentUser
+																	  }) => {
 	const queryClient = useQueryClient();
 	const [notificationPermission, setNotificationPermission] = useState<
 		"granted" | "denied" | "default"
 	>("default");
 	const [isLoading, setIsLoading] = useState(false);
-	const [hasSubscription, setHasSubscription] = useState(false);
 
 	const showNotification = async () => {
 		if (isLoading) return;
@@ -86,16 +91,17 @@ export default function NotificationRequest() {
 			const subscription = await registration.pushManager.subscribe(options);
 			console.log("Subscription successful:", subscription);
 
-			// Store subscription on server
-			const result = await storeSubscription(JSON.stringify(subscription));
-			const response = JSON.parse(result);
-
-			if (response.success) {
-				setHasSubscription(true);
-				toast.success("Push notifications enabled successfully!");
-			} else {
-				throw new Error(response.error);
-			}
+			// Save to backend via route (since Prisma cannot run directly in client component)
+			await fetch("/api/v1/notifications/subscribe", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					subscription: subscription.toJSON(),
+					userId: currentUser?.id,
+				}),
+			});
 
 		} catch (error: any) {
 			console.error('Detailed subscription error:', error);
@@ -116,17 +122,18 @@ export default function NotificationRequest() {
 
 	const removeNotification = async () => {
 		try {
-			const registration = await navigator.serviceWorker.getRegistration();
-			if (registration) {
-				const subscription = await registration.pushManager.getSubscription();
-				if (subscription) {
-					await subscription.unsubscribe();
-				}
-			}
 
-			setHasSubscription(false);
 			setNotificationPermission("denied");
-			toast.success("Push notifications disabled.");
+			// Remove subscription from your database via API
+			await fetch("/api/v1/notifications/unsubscribe", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					userId: currentUser?.id,
+				}),
+			});
 
 		} catch (error) {
 			console.error("Error removing notification:", error);
@@ -148,7 +155,7 @@ export default function NotificationRequest() {
 				</div>
 			)}
 
-			{notificationPermission === "granted" && hasSubscription ? (
+			{notificationPermission === "granted" ? (
 				<BellRing
 					onClick={removeNotification}
 					className={`${isLoading ? 'opacity-50' : ''}`}
