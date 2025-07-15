@@ -4,7 +4,6 @@ import webpush from "web-push";
 
 export const sendNotification = async (
 	message: string,
-	user_id: string,
 	icon: string,
 	name: string
 ) => {
