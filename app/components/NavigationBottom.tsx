@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import {Home, Plus, User} from "lucide-react";
 import {CreatePost} from "@/app/ui/CreatePost";
-import {sendNotification} from "@/actions/notification";
 
 interface HeaderProps {
     currentUser: any;

@@ -1,6 +1,26 @@
 "use server";
 import webpush from "web-push";
-import { subscriptionStore } from "@/lib/subscription-store";
+import {subscriptionStore} from "@/lib/subscription-store";
+
+// Validate environment variables
+const validateEnvVars = () => {
+	// Try different ways to access environment variables
+	const publicKey = process.env.NEXT_PUBLIC_VAPID_KEY || process.env.VAPID_PUBLIC_KEY;
+	const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+	console.log('Environment check:', {
+		hasPublicKey: !!publicKey,
+		hasPrivateKey: !!privateKey,
+		publicKeyLength: publicKey?.length || 0,
+		privateKeyLength: privateKey?.length || 0
+	});
+
+	if (!publicKey || !privateKey) {
+		throw new Error(`Missing VAPID keys: ${!publicKey ? 'NEXT_PUBLIC_VAPID_KEY' : ''} ${!privateKey ? 'VAPID_PRIVATE_KEY' : ''}`);
+	}
+
+	return { publicKey, privateKey };
+};
 
 export const storeSubscription = async (subscriptionData: string, userId: string = 'default') => {
 	try {
@@ -19,15 +39,18 @@ export const sendNotification = async (
 	userId: string = 'default'
 ) => {
 	try {
-		const vapidKeys = {
-			publicKey: process.env.NEXT_PUBLIC_VAPID_KEY!,
-			privateKey: process.env.VAPID_PRIVATE_KEY!,
-		};
+		// Validate environment variables first
+		const { publicKey, privateKey } = validateEnvVars();
+
+		console.log('Public key length:', publicKey.length);
+		console.log('Private key length:', privateKey.length);
+		console.log('Public key starts with B:', publicKey.startsWith('B'));
+		console.log('Private key format valid:', privateKey.length === 43);
 
 		webpush.setVapidDetails(
 			"mailto:myuserid@email.com",
-			vapidKeys.publicKey,
-			vapidKeys.privateKey
+			publicKey,
+			privateKey
 		);
 
 		const subscription: any = subscriptionStore.get(userId);
@@ -74,15 +97,13 @@ export const sendNotificationToAll = async (
 	name: string
 ) => {
 	try {
-		const vapidKeys = {
-			publicKey: process.env.NEXT_PUBLIC_VAPID_KEY!,
-			privateKey: process.env.VAPID_PRIVATE_KEY!,
-		};
+		// Validate environment variables first
+		const { publicKey, privateKey } = validateEnvVars();
 
 		webpush.setVapidDetails(
 			"mailto:myuserid@email.com",
-			vapidKeys.publicKey,
-			vapidKeys.privateKey
+			publicKey,
+			privateKey
 		);
 
 		const subscriptions = subscriptionStore.getAll();
