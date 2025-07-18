@@ -17,6 +17,6 @@ export default withPWA({
     dest: "public",
     register: true,
     workboxOptions: {
-        disableDevLogs: true,
+        swSrc: "public/custom-sw.js", // if your file is at public/custom-sw.js
     },
 })(nextConfig);
