@@ -52,14 +52,17 @@ export const NotificationRequest: React.FC<NotificationRequestProps> = ({
 		}
 
 		try {
-			await navigator.serviceWorker.ready;
 
-			let registration = await navigator.serviceWorker.getRegistration();
+			// Wait for service worker to be ready
+			const registration = await navigator.serviceWorker.ready;
 
-			if (!registration) {
-				registration = await navigator.serviceWorker.register("/sw.js");
-				await navigator.serviceWorker.ready;
-			}
+            // Check if service worker is actually registered
+            if (!registration) {
+                toast.error("Service worker not registered");
+            }
+
+			// Small delay to ensure service worker is fully initialized
+			await new Promise(resolve => setTimeout(resolve, 100));
 
 			await generateSubscribeEndPoint(registration);
 
@@ -79,6 +82,39 @@ export const NotificationRequest: React.FC<NotificationRequestProps> = ({
 				throw new Error('VAPID key not found in environment variables.');
 			}
 
+			const saveSubscription = async (subscription: PushSubscription) => {
+				try {
+					const response = await fetch("/api/v1/notifications/subscribe", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							subscription: subscription.toJSON(),
+							userId: currentUser?.id,
+						}),
+					});
+
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+
+					toast.success("Notifications enabled successfully!");
+				} catch (error) {
+					console.error("Error saving subscription:", error);
+					toast.error("Failed to save subscription to server.");
+				}
+			};
+
+			// Check if already subscribed
+			const existingSubscription = await registration.pushManager.getSubscription();
+			if (existingSubscription) {
+				console.log("Already subscribed:", existingSubscription);
+				// Save existing subscription to backend
+				await saveSubscription(existingSubscription);
+				return;
+			}
+
 			const applicationServerKey = urlB64ToUint8Array(
 				process.env.NEXT_PUBLIC_VAPID_KEY
 			);
@@ -92,16 +128,7 @@ export const NotificationRequest: React.FC<NotificationRequestProps> = ({
 			console.log("Subscription successful:", subscription);
 
 			// Save to backend via route (since Prisma cannot run directly in client component)
-			await fetch("/api/v1/notifications/subscribe", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					subscription: subscription.toJSON(),
-					userId: currentUser?.id,
-				}),
-			});
+			await saveSubscription(subscription);
 
 		} catch (error: any) {
 			console.error('Detailed subscription error:', error);
